@@ -21,11 +21,14 @@ void printBreak() {
 void matrixMultiplication() {
     // Get the number of rows and columns of the first matrix from the user
     cout << "Number of rows of first matrix: ";
+//    int aRows=3;
     int aRows;
     cin>>aRows;
     cout << "Number of columns of first matrix: ";
+//    int aCols=2;
     int aCols;
     cin>>aCols;
+//    int aMatrix[3][2] = {{1, 4}, {2, 5}, {3, 6}};
     int aMatrix[aRows][aCols];
     printBreak();
     
@@ -43,8 +46,10 @@ void matrixMultiplication() {
     // Get the number of columns of the second matrix from the user
     int bRows = aCols;
     cout << "Number of columns of second matrix: ";
-    int bCols;
+//    int bCols=3;
+        int bCols;
     cin>>bCols;
+//    int bMatrix[2][3] = {{7, 8, 9}, {10, 11, 12}};
     int bMatrix[bRows][bCols];
     printBreak();
     
@@ -63,12 +68,12 @@ void matrixMultiplication() {
     int resultRows = aRows;
     int resultCols = bCols;
     int result[resultRows][resultCols];
-    int* pids[resultRows][resultCols]; // Stores children's PIDs
+    pid_t pids[resultRows][resultCols]; // Stores children's PIDs
     for (int row = 0; row < resultRows; row++) {
         for (int col = 0; col < resultCols; col++) {
-            int status;
             pid_t pid = fork();
-            pids[row][col] = &status;
+            pids[row][col] = pid;
+            fflush(stdout);
             if (pid == 0) {
                 // Child
                 int value = 0;
@@ -84,10 +89,11 @@ void matrixMultiplication() {
     // Wait for the children and get the results
     for (int row = 0; row < resultRows; row++) {
         for (int col = 0; col < resultCols; col++) {
-            cout << "Waiting for [" << row << "][" << col << "]\n";
+            cout << "Waiting for [" << row << "][" << col << "]-"<< &pids[row][col] <<" \n";
             fflush(stdout);
-            wait(pids[row][col]);
-            result[row][col] = WEXITSTATUS(*pids[row][col]);
+            int status;
+            waitpid(pids[row][col], &status,0);
+            result[row][col] = WEXITSTATUS(status);
         }
     }
     printBreak();
