@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <iostream>
+#include <fstream>
 #include <sys/wait.h>
 
 using namespace std;
@@ -18,6 +19,28 @@ void printBreak() {
     cout << "---------------------------------------\n";
 }
 
+void write(int value, int i, int j) {
+    ofstream file;
+    string fileName = to_string(i) + "-" + to_string(j) + ".txt";
+    file.open(fileName);
+    file << value;
+    file.close();
+}
+
+int read(int i, int j) {
+    string fileName = to_string(i) + "-" + to_string(j) + ".txt";
+    ifstream file(fileName);
+    string line;
+    if (file.is_open()) {
+        getline(file, line);
+        file.close();
+        remove(fileName.c_str());
+        return atoi(line.c_str());
+    }
+    file.close();
+    return 0;
+}
+
 void matrixMultiplication() {
     // Get the number of rows and columns of the first matrix from the user
     cout << "Number of rows of first matrix: ";
@@ -31,7 +54,7 @@ void matrixMultiplication() {
 //    int aMatrix[3][2] = {{1, 4}, {2, 5}, {3, 6}};
     int aMatrix[aRows][aCols];
     printBreak();
-    
+
     // Print first matrix
     cout << "First:\n";
     for (int i = 0; i < aRows; i++) {
@@ -47,12 +70,12 @@ void matrixMultiplication() {
     int bRows = aCols;
     cout << "Number of columns of second matrix: ";
 //    int bCols=3;
-        int bCols;
+    int bCols;
     cin>>bCols;
 //    int bMatrix[2][3] = {{7, 8, 9}, {10, 11, 12}};
     int bMatrix[bRows][bCols];
     printBreak();
-    
+
     // Print second matrix
     cout << "Second:\n";
     for (int i = 0; i < bRows; i++) {
@@ -73,7 +96,6 @@ void matrixMultiplication() {
         for (int col = 0; col < resultCols; col++) {
             pid_t pid = fork();
             pids[row][col] = pid;
-            fflush(stdout);
             if (pid == 0) {
                 // Child
                 int value = 0;
@@ -81,7 +103,8 @@ void matrixMultiplication() {
                     value += aMatrix[row][inner] * bMatrix[inner][col];
                 }
 //                sleep(row*col); // Simulate long calculations
-                exit(value);
+                write(value, row, col);
+                exit(0);
             }
         }
     }
@@ -89,11 +112,10 @@ void matrixMultiplication() {
     // Wait for the children and get the results
     for (int row = 0; row < resultRows; row++) {
         for (int col = 0; col < resultCols; col++) {
-            cout << "Waiting for [" << row << "][" << col << "]-"<< &pids[row][col] <<" \n";
-            fflush(stdout);
+            cout << "Waiting for [" << row << "][" << col << "]-" << &pids[row][col] << " \n";
             int status;
-            waitpid(pids[row][col], &status,0);
-            result[row][col] = WEXITSTATUS(status);
+            waitpid(pids[row][col], &status, 0);
+            result[row][col] = read(row, col);
         }
     }
     printBreak();
@@ -108,13 +130,13 @@ void matrixMultiplication() {
 }
 
 int main(int argc, char** argv) {
-//    The program generates two matrices with any dimensions given by the user. 
-//    Then, for each of the calculated results in a given place in the matrix, 
-//    it generates a new process that returns the result of the calculation as the process completion status. 
-//    The program then waits for the results of the children's processes on the basis of which it completes the matrix. 
-//    Finally, the matrix is printed on the screen.
-    
-//    If you want to simulate long computations, you can uncomment line 78 (with comment "Simulate long computations")
+    //    The program generates two matrices with any dimensions given by the user. 
+    //    Then, for each of the calculated results in a given place in the matrix, 
+    //    it generates a new process that returns the result of the calculation as the process completion status. 
+    //    The program then waits for the results of the children's processes on the basis of which it completes the matrix. 
+    //    Finally, the matrix is printed on the screen.
+
+    //    If you want to simulate long computations, you can uncomment line 78 (with comment "Simulate long computations")
     matrixMultiplication();
     return (EXIT_SUCCESS);
 }
